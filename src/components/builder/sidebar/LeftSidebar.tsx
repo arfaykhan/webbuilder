@@ -1,5 +1,12 @@
 import { useState } from 'react';
 import {
+  useDraggable,
+} from '@dnd-kit/core';
+import { useEditorStore } from '../../../store/editorStore';
+import { componentRegistry, getComponentsByCategory } from '../../../lib/component-registry';
+import type { BuilderNode, ComponentType } from '../../../types/builder';
+import { v4 as uuidv4 } from 'uuid';
+import {
   Layout,
   Type,
   MousePointerClick,
@@ -34,48 +41,20 @@ import {
   FolderOpen,
   type LucideIcon,
 } from 'lucide-react';
-import { useEditorStore } from '../../../store/editorStore';
-import { componentRegistry, getComponentsByCategory } from '../../../lib/component-registry';
-import type { BuilderNode, ComponentType } from '../../../types/builder';
-import { v4 as uuidv4 } from 'uuid';
 
 // Icon mapping
 const iconMap: Record<string, LucideIcon> = {
-  Layout,
-  Type,
-  MousePointerClick,
-  Image,
-  Video,
-  CreditCard,
-  Menu,
-  PanelBottom,
-  Mail,
-  Heading,
-  AlignLeft,
-  Box,
-  Rows,
-  Columns,
-  MoveVertical,
-  Minus,
-  Star,
-  Zap,
-  MessageSquare,
-  DollarSign,
-  HelpCircle,
-  GalleryHorizontal,
-  Users,
-  Grid3x3,
-  TextCursorInput,
-  FileText,
-  ChevronDown,
-  CheckSquare,
+  Layout, Type, MousePointerClick, Image, Video, CreditCard, Menu,
+  PanelBottom, Mail, Heading, AlignLeft, Box, Rows, Columns,
+  MoveVertical, Minus, Star, Zap, MessageSquare, DollarSign,
+  HelpCircle, GalleryHorizontal, Users, Grid3x3, TextCursorInput,
+  FileText, ChevronDown, CheckSquare,
 };
 
-function getIcon(name: string): LucideIcon {
+export function getIcon(name: string): LucideIcon {
   return iconMap[name] || Box;
 }
 
-// Category labels
 const categoryLabels: Record<string, string> = {
   layout: 'Layout',
   basic: 'Basic',
@@ -85,10 +64,57 @@ const categoryLabels: Record<string, string> = {
 };
 
 // ============================================================
+// Draggable Sidebar Component
+// ============================================================
+function DraggableComponent({ type, label, icon }: { type: ComponentType; label: string; icon: string }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `sidebar-${type}`,
+    data: { type, from: 'sidebar' },
+  });
+
+  const Icon = getIcon(icon);
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all cursor-grab active:cursor-grabbing group select-none ${
+        isDragging
+          ? 'bg-blue-500/20 border-blue-500 opacity-50'
+          : 'bg-[#1e1e36] border-[#2a2a4a] hover:border-blue-500/50 hover:bg-[#252545]'
+      }`}
+      title={`Drag to add ${label}`}
+    >
+      <Icon size={18} className="text-gray-400 group-hover:text-blue-400 transition-colors" />
+      <span className="text-[10px] text-gray-500 group-hover:text-gray-300 transition-colors">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ============================================================
+// Drag Overlay (shows while dragging)
+// ============================================================
+function DragOverlayContent({ type }: { type: ComponentType }) {
+  const def = componentRegistry[type];
+  if (!def) return null;
+  const Icon = getIcon(def.icon);
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg shadow-xl shadow-blue-500/30 text-xs font-medium">
+      <Icon size={14} />
+      <span>{def.label}</span>
+    </div>
+  );
+}
+
+// ============================================================
 // Elements Tab
 // ============================================================
 function ElementsTab() {
-  const { addNode, setDragging } = useEditorStore();
+  const { addNode } = useEditorStore();
   const categories = ['layout', 'basic', 'content', 'navigation', 'forms'] as const;
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(['layout', 'basic'])
@@ -116,16 +142,6 @@ function ElementsTab() {
     addNode(newNode);
   };
 
-  const handleDragStart = (e: React.DragEvent, type: ComponentType) => {
-    e.dataTransfer.setData('componentType', type);
-    e.dataTransfer.effectAllowed = 'copy';
-    setDragging(true);
-  };
-
-  const handleDragEnd = () => {
-    setDragging(false);
-  };
-
   return (
     <div className="py-2">
       {categories.map((cat) => {
@@ -146,25 +162,14 @@ function ElementsTab() {
             </button>
             {isExpanded && (
               <div className="grid grid-cols-2 gap-1.5 px-3 pb-3">
-                {components.map((comp) => {
-                  const Icon = getIcon(comp.icon);
-                  return (
-                    <button
-                      key={comp.type}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, comp.type)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => handleAddComponent(comp.type)}
-                      className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-[#1e1e36] border border-[#2a2a4a] hover:border-blue-500/50 hover:bg-[#252545] transition-all cursor-grab active:cursor-grabbing group"
-                      title={`Add ${comp.label}`}
-                    >
-                      <Icon size={18} className="text-gray-400 group-hover:text-blue-400 transition-colors" />
-                      <span className="text-[10px] text-gray-500 group-hover:text-gray-300 transition-colors">
-                        {comp.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                {components.map((comp) => (
+                  <DraggableComponent
+                    key={comp.type}
+                    type={comp.type}
+                    label={comp.label}
+                    icon={comp.icon}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -216,7 +221,7 @@ function LayersTab() {
       </div>
       {page.nodes.length === 0 ? (
         <div className="px-3 py-8 text-center text-xs text-gray-600">
-          No elements yet. Add components from the Elements tab.
+          No elements yet. Drag components from the Elements tab.
         </div>
       ) : (
         page.nodes.map((node: BuilderNode) => renderLayer(node))
@@ -301,7 +306,7 @@ function AssetsTab() {
 }
 
 // ============================================================
-// Left Sidebar
+// Left Sidebar (with DnD context)
 // ============================================================
 export function LeftSidebar() {
   const { leftSidebarTab, setLeftSidebarTab } = useEditorStore();
@@ -348,3 +353,5 @@ export function LeftSidebar() {
     </aside>
   );
 }
+
+

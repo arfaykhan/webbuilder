@@ -1,50 +1,50 @@
+import { useState } from 'react';
+import { useDroppable } from '@dnd-kit/core';
 import { useEditorStore } from '../../../store/editorStore';
-import type { BuilderNode, ComponentType } from '../../../types/builder';
 import { componentRegistry } from '../../../lib/component-registry';
+import type { BuilderNode } from '../../../types/builder';
 import { Copy, Trash2, Layers, Move } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
 
 // ============================================================
-// Drop Zone - area where components can be dropped into a container
+// Droppable Canvas Area
 // ============================================================
-function DropZone({ parentId }: { parentId: string }) {
-  const { addNode, setDragging } = useEditorStore();
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = 'copy';
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const componentType = e.dataTransfer.getData('componentType') as ComponentType;
-    if (!componentType) return;
-
-    const def = componentRegistry[componentType];
-    if (!def) return;
-
-    const newNode: BuilderNode = {
-      id: uuidv4(),
-      type: componentType,
-      name: def.label,
-      props: { ...def.defaultProps },
-      styles: { ...def.defaultStyles },
-      children: [],
-    };
-
-    addNode(newNode, parentId);
-    setDragging(false);
-  };
+function DroppableCanvas({ children }: { children: React.ReactNode }) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: 'canvas-root',
+    data: { type: 'canvas' },
+  });
 
   return (
     <div
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      className="flex items-center justify-center min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm hover:border-blue-400 hover:bg-blue-50/50 transition-colors"
+      ref={setNodeRef}
+      className={`bg-white rounded-lg shadow-2xl shadow-black/20 min-h-[calc(100vh-120px)] overflow-hidden transition-all ${
+        isOver ? 'ring-4 ring-blue-500/50 ring-offset-2 ring-offset-[#0f0f1e]' : ''
+      }`}
     >
-      Drop components here
+      {children}
+    </div>
+  );
+}
+
+// ============================================================
+// Droppable Zone (for containers)
+// ============================================================
+function DropZone({ parentId }: { parentId: string }) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `dropzone-${parentId}`,
+    data: { type: 'dropzone', parentId },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex items-center justify-center min-h-[60px] border-2 border-dashed rounded-lg text-sm transition-all ${
+        isOver
+          ? 'border-blue-500 bg-blue-50 text-blue-600 scale-[1.02]'
+          : 'border-gray-300 text-gray-400 hover:border-blue-400 hover:bg-blue-50/30'
+      }`}
+    >
+      {isOver ? '↓ Drop here' : 'Drop components here'}
     </div>
   );
 }
@@ -53,7 +53,7 @@ function DropZone({ parentId }: { parentId: string }) {
 // Component Renderer - renders a single node
 // ============================================================
 function ComponentRenderer({ node }: { node: BuilderNode }) {
-  const { selectedNodeId, hoveredNodeId, selectNode, setHoveredNode } = useEditorStore();
+  const { selectedNodeId, hoveredNodeId, selectNode, setHoveredNode, viewportMode } = useEditorStore();
   const isSelected = selectedNodeId === node.id;
   const isHovered = hoveredNodeId === node.id;
 
@@ -72,7 +72,6 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
   };
 
   // Get responsive styles based on viewport
-  const { viewportMode } = useEditorStore();
   const baseStyles = { ...node.styles };
   if (viewportMode === 'tablet' && node.responsiveStyles?.tablet) {
     Object.assign(baseStyles, node.responsiveStyles.tablet);
@@ -122,13 +121,14 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
           </div>
         );
 
-      case 'heading':
+      case 'heading': {
         const Tag = ((node.props.tag as string) || 'h2') as keyof JSX.IntrinsicElements;
         return (
           <Tag style={baseStyles}>
             {node.props.text as string}
           </Tag>
         );
+      }
 
       case 'paragraph':
         return (
@@ -371,39 +371,13 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
 // Canvas
 // ============================================================
 export function Canvas() {
-  const { viewportMode, selectNode, project, currentPageId, addNode, setDragging } = useEditorStore();
+  const { viewportMode, selectNode, project, currentPageId } = useEditorStore();
   const page = project.pages.find((p) => p.id === currentPageId);
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget || (e.target as HTMLElement).dataset.canvas) {
       selectNode(null);
     }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const componentType = e.dataTransfer.getData('componentType') as ComponentType;
-    if (!componentType) return;
-
-    const def = componentRegistry[componentType];
-    if (!def) return;
-
-    const newNode: BuilderNode = {
-      id: uuidv4(),
-      type: componentType,
-      name: def.label,
-      props: { ...def.defaultProps },
-      styles: { ...def.defaultStyles },
-      children: [],
-    };
-
-    addNode(newNode);
-    setDragging(false);
   };
 
   // Viewport widths
@@ -417,8 +391,6 @@ export function Canvas() {
     <div
       className="flex-1 overflow-auto bg-[#0f0f1e] flex justify-center"
       onClick={handleCanvasClick}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
     >
       <div
         className="relative my-8 transition-all duration-300 ease-in-out"
@@ -428,12 +400,8 @@ export function Canvas() {
           minHeight: 'calc(100vh - 120px)',
         }}
       >
-        {/* Canvas frame */}
-        <div
-          data-canvas="true"
-          className="bg-white rounded-lg shadow-2xl shadow-black/20 min-h-[calc(100vh-120px)] overflow-hidden"
-          style={viewportMode !== 'desktop' ? { border: '1px solid #2a2a4a' } : {}}
-        >
+        {/* Canvas frame with droppable */}
+        <DroppableCanvas>
           {/* Empty state */}
           {(!page || page.nodes.length === 0) && (
             <div
@@ -458,7 +426,7 @@ export function Canvas() {
           {page?.nodes.map((node) => (
             <ComponentRenderer key={node.id} node={node} />
           ))}
-        </div>
+        </DroppableCanvas>
       </div>
     </div>
   );
