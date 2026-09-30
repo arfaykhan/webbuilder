@@ -39,6 +39,7 @@ import {
   Layers,
   File,
   FolderOpen,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -198,7 +199,7 @@ function ElementsTab() {
 // Layers Tab
 // ============================================================
 function LayersTab() {
-  const { project, currentPageId, selectedNodeId, selectNode } = useEditorStore();
+  const { project, currentPageId, selectedNodeId, selectNode, deleteNode } = useEditorStore();
   const page = project.pages.find((p) => p.id === currentPageId);
   if (!page) return null;
 
@@ -206,24 +207,36 @@ function LayersTab() {
     const isSelected = selectedNodeId === node.id;
     const hasChildren = node.children.length > 0;
 
+    const handleDelete = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      deleteNode(node.id);
+    };
+
     return (
       <div key={node.id}>
-        <button
-          onClick={() => selectNode(node.id)}
-          className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs transition-colors ${
+        <div
+          className={`group flex items-center gap-2 w-full px-3 py-1.5 text-xs transition-colors cursor-pointer ${
             isSelected
               ? 'bg-blue-500/20 text-blue-300 border-l-2 border-blue-500'
               : 'text-gray-400 hover:bg-[#252545] hover:text-gray-200 border-l-2 border-transparent'
           }`}
           style={{ paddingLeft: `${12 + depth * 16}px` }}
+          onClick={() => selectNode(node.id)}
         >
-          <span className="truncate">{node.name || node.type}</span>
+          <span className="truncate flex-1">{node.name || node.type}</span>
           {hasChildren && (
-            <span className="text-[10px] text-gray-600 ml-auto">
+            <span className="text-[10px] text-gray-600">
               {node.children.length}
             </span>
           )}
-        </button>
+          <button
+            onClick={handleDelete}
+            className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all p-0.5"
+            title="Delete"
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
         {hasChildren && node.children.map((child: BuilderNode) => renderLayer(child, depth + 1))}
       </div>
     );
