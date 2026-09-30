@@ -1,13 +1,60 @@
+import { useState } from 'react';
+import { useDroppable } from '@dnd-kit/core';
+import { v4 as uuidv4 } from 'uuid';
 import { useEditorStore } from '../../../store/editorStore';
-import type { BuilderNode } from '../../../types/builder';
 import { componentRegistry } from '../../../lib/component-registry';
+import type { BuilderNode } from '../../../types/builder';
 import { Copy, Trash2, Layers, Move } from 'lucide-react';
+
+// ============================================================
+// Droppable Canvas Area
+// ============================================================
+function DroppableCanvas({ children }: { children: React.ReactNode }) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: 'canvas-root',
+    data: { type: 'canvas' },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`bg-white rounded-lg shadow-2xl shadow-black/20 min-h-[calc(100vh-120px)] overflow-hidden transition-all ${
+        isOver ? 'ring-4 ring-blue-500/50 ring-offset-2 ring-offset-[#0f0f1e]' : ''
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ============================================================
+// Droppable Zone (for containers)
+// ============================================================
+function DropZone({ parentId }: { parentId: string }) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `dropzone-${parentId}`,
+    data: { type: 'dropzone', parentId },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex items-center justify-center min-h-[60px] border-2 border-dashed rounded-lg text-sm transition-all ${
+        isOver
+          ? 'border-blue-500 bg-blue-50 text-blue-600 scale-[1.02]'
+          : 'border-gray-300 text-gray-400 hover:border-blue-400 hover:bg-blue-50/30'
+      }`}
+    >
+      {isOver ? '↓ Drop here' : 'Drop components here'}
+    </div>
+  );
+}
 
 // ============================================================
 // Component Renderer - renders a single node
 // ============================================================
 function ComponentRenderer({ node }: { node: BuilderNode }) {
-  const { selectedNodeId, hoveredNodeId, selectNode, setHoveredNode } = useEditorStore();
+  const { selectedNodeId, hoveredNodeId, selectNode, setHoveredNode, viewportMode } = useEditorStore();
   const isSelected = selectedNodeId === node.id;
   const isHovered = hoveredNodeId === node.id;
 
@@ -26,7 +73,6 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
   };
 
   // Get responsive styles based on viewport
-  const { viewportMode } = useEditorStore();
   const baseStyles = { ...node.styles };
   if (viewportMode === 'tablet' && node.responsiveStyles?.tablet) {
     Object.assign(baseStyles, node.responsiveStyles.tablet);
@@ -39,11 +85,7 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
       case 'section':
         return (
           <div style={baseStyles} className="min-h-[100px]">
-            {node.children.length === 0 && (
-              <div className="flex items-center justify-center h-full min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm">
-                Drop components here
-              </div>
-            )}
+            {node.children.length === 0 && <DropZone parentId={node.id} />}
             {node.children.map((child) => (
               <ComponentRenderer key={child.id} node={child} />
             ))}
@@ -53,11 +95,7 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
       case 'container':
         return (
           <div style={baseStyles}>
-            {node.children.length === 0 && (
-              <div className="flex items-center justify-center h-20 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm">
-                Drop components here
-              </div>
-            )}
+            {node.children.length === 0 && <DropZone parentId={node.id} />}
             {node.children.map((child) => (
               <ComponentRenderer key={child.id} node={child} />
             ))}
@@ -67,11 +105,7 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
       case 'row':
         return (
           <div style={baseStyles}>
-            {node.children.length === 0 && (
-              <div className="flex items-center justify-center h-16 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm">
-                Drop components here
-              </div>
-            )}
+            {node.children.length === 0 && <DropZone parentId={node.id} />}
             {node.children.map((child) => (
               <ComponentRenderer key={child.id} node={child} />
             ))}
@@ -81,24 +115,21 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
       case 'columns':
         return (
           <div style={baseStyles}>
-            {node.children.length === 0 && (
-              <div className="flex items-center justify-center h-16 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm">
-                Drop components here
-              </div>
-            )}
+            {node.children.length === 0 && <DropZone parentId={node.id} />}
             {node.children.map((child) => (
               <ComponentRenderer key={child.id} node={child} />
             ))}
           </div>
         );
 
-      case 'heading':
+      case 'heading': {
         const Tag = ((node.props.tag as string) || 'h2') as keyof JSX.IntrinsicElements;
         return (
           <Tag style={baseStyles}>
             {node.props.text as string}
           </Tag>
         );
+      }
 
       case 'paragraph':
         return (
@@ -341,13 +372,129 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
 // Canvas
 // ============================================================
 export function Canvas() {
-  const { viewportMode, selectNode, project, currentPageId } = useEditorStore();
+  const { viewportMode, selectNode, project, currentPageId, addNode } = useEditorStore();
   const page = project.pages.find((p) => p.id === currentPageId);
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget || (e.target as HTMLElement).dataset.canvas) {
       selectNode(null);
     }
+  };
+
+  // Quick start - add a basic page structure
+  const handleQuickStart = () => {
+    // Add a section with navbar
+    const navbar: BuilderNode = {
+      id: uuidv4(),
+      type: 'navbar',
+      name: 'Navbar',
+      props: { brand: 'My Website', links: ['Home', 'About', 'Contact'] },
+      styles: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '16px 24px',
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid #e5e7eb',
+      },
+      children: [],
+    };
+    addNode(navbar);
+
+    // Add a hero section
+    const heroSection: BuilderNode = {
+      id: uuidv4(),
+      type: 'section',
+      name: 'Hero Section',
+      props: {},
+      styles: {
+        paddingTop: '80px',
+        paddingBottom: '80px',
+        paddingLeft: '20px',
+        paddingRight: '20px',
+        backgroundColor: '#f9fafb',
+        textAlign: 'center',
+      },
+      children: [
+        {
+          id: uuidv4(),
+          type: 'container',
+          name: 'Container',
+          props: {},
+          styles: {
+            maxWidth: '800px',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          },
+          children: [
+            {
+              id: uuidv4(),
+              type: 'heading',
+              name: 'Hero Heading',
+              props: { text: 'Welcome to My Website', tag: 'h1' },
+              styles: {
+                fontSize: '48px',
+                fontWeight: '700',
+                lineHeight: '1.2',
+                color: '#1f2937',
+                marginBottom: '24px',
+              },
+              children: [],
+            },
+            {
+              id: uuidv4(),
+              type: 'paragraph',
+              name: 'Hero Text',
+              props: { text: 'Build amazing websites with our visual builder. No coding required.' },
+              styles: {
+                fontSize: '20px',
+                lineHeight: '1.6',
+                color: '#6b7280',
+                marginBottom: '32px',
+              },
+              children: [],
+            },
+            {
+              id: uuidv4(),
+              type: 'button',
+              name: 'CTA Button',
+              props: { text: 'Get Started', link: '#' },
+              styles: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '14px 32px',
+                backgroundColor: '#3b82f6',
+                color: '#ffffff',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                border: 'none',
+              },
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
+    addNode(heroSection);
+
+    // Add a footer
+    const footer: BuilderNode = {
+      id: uuidv4(),
+      type: 'footer',
+      name: 'Footer',
+      props: { copyright: '© 2026 My Website. All rights reserved.' },
+      styles: {
+        padding: '40px 24px',
+        backgroundColor: '#1f2937',
+        color: '#ffffff',
+        textAlign: 'center',
+      },
+      children: [],
+    };
+    addNode(footer);
   };
 
   // Viewport widths
@@ -370,29 +517,62 @@ export function Canvas() {
           minHeight: 'calc(100vh - 120px)',
         }}
       >
-        {/* Canvas frame */}
-        <div
-          data-canvas="true"
-          className="bg-white rounded-lg shadow-2xl shadow-black/20 min-h-[calc(100vh-120px)] overflow-hidden"
-          style={viewportMode !== 'desktop' ? { border: '1px solid #2a2a4a' } : {}}
-        >
+        {/* Canvas frame with droppable */}
+        <DroppableCanvas>
           {/* Empty state */}
           {(!page || page.nodes.length === 0) && (
             <div
               data-canvas="true"
-              className="flex flex-col items-center justify-center min-h-[400px] text-center p-8"
+              className="flex flex-col items-center justify-center min-h-[500px] text-center p-8"
             >
-              <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-400">
+              <div className="w-20 h-20 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-6">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-400">
                   <rect x="3" y="3" width="18" height="18" rx="2" />
                   <path d="M3 9h18" />
                   <path d="M9 21V9" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">Start Building</h3>
-              <p className="text-sm text-gray-500 max-w-sm">
-                Drag components from the left sidebar or click to add them to your page.
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Start Building Your Website</h3>
+              <p className="text-sm text-gray-500 max-w-md mb-8">
+                Drag components from the left sidebar, click to add them, or start with a template.
               </p>
+
+              {/* Quick Start Button */}
+              <button
+                onClick={handleQuickStart}
+                className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/20 mb-6"
+              >
+                Start with Basic Template
+              </button>
+
+              {/* Instructions */}
+              <div className="flex gap-8 text-xs text-gray-500">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </div>
+                  <span>Click components to add</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
+                      <path d="M5 9l4-4 4 4M9 5v14" />
+                    </svg>
+                  </div>
+                  <span>Drag to reposition</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1" />
+                    </svg>
+                  </div>
+                  <span>Edit in properties panel</span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -400,7 +580,7 @@ export function Canvas() {
           {page?.nodes.map((node) => (
             <ComponentRenderer key={node.id} node={node} />
           ))}
-        </div>
+        </DroppableCanvas>
       </div>
     </div>
   );
