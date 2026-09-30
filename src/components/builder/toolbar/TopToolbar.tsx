@@ -45,7 +45,7 @@ export function TopToolbar() {
         </button>
         <div className="w-px h-6 bg-[#2a2a4a]" />
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg bg-blue-500 flex items-center justify-center">
             <span className="text-white text-xs font-bold">W</span>
           </div>
           <input
@@ -130,7 +130,7 @@ export function TopToolbar() {
         >
           <Download size={16} />
         </button>
-        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-medium rounded-lg hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20">
+        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-lg hover:bg-blue-600 transition-colors">
           <Rocket size={14} />
           Publish
         </button>
