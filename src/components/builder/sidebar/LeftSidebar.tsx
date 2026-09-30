@@ -116,7 +116,9 @@ function ElementsTab() {
     addNode(newNode);
   };
 
-  const handleDragStart = (type: ComponentType) => {
+  const handleDragStart = (e: React.DragEvent, type: ComponentType) => {
+    e.dataTransfer.setData('componentType', type);
+    e.dataTransfer.effectAllowed = 'copy';
     setDragging(true);
   };
 
@@ -150,7 +152,7 @@ function ElementsTab() {
                     <button
                       key={comp.type}
                       draggable
-                      onDragStart={() => handleDragStart(comp.type)}
+                      onDragStart={(e) => handleDragStart(e, comp.type)}
                       onDragEnd={handleDragEnd}
                       onClick={() => handleAddComponent(comp.type)}
                       className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-[#1e1e36] border border-[#2a2a4a] hover:border-blue-500/50 hover:bg-[#252545] transition-all cursor-grab active:cursor-grabbing group"

@@ -1,7 +1,53 @@
 import { useEditorStore } from '../../../store/editorStore';
-import type { BuilderNode } from '../../../types/builder';
+import type { BuilderNode, ComponentType } from '../../../types/builder';
 import { componentRegistry } from '../../../lib/component-registry';
 import { Copy, Trash2, Layers, Move } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
+
+// ============================================================
+// Drop Zone - area where components can be dropped into a container
+// ============================================================
+function DropZone({ parentId }: { parentId: string }) {
+  const { addNode, setDragging } = useEditorStore();
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const componentType = e.dataTransfer.getData('componentType') as ComponentType;
+    if (!componentType) return;
+
+    const def = componentRegistry[componentType];
+    if (!def) return;
+
+    const newNode: BuilderNode = {
+      id: uuidv4(),
+      type: componentType,
+      name: def.label,
+      props: { ...def.defaultProps },
+      styles: { ...def.defaultStyles },
+      children: [],
+    };
+
+    addNode(newNode, parentId);
+    setDragging(false);
+  };
+
+  return (
+    <div
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      className="flex items-center justify-center min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm hover:border-blue-400 hover:bg-blue-50/50 transition-colors"
+    >
+      Drop components here
+    </div>
+  );
+}
 
 // ============================================================
 // Component Renderer - renders a single node
@@ -39,11 +85,7 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
       case 'section':
         return (
           <div style={baseStyles} className="min-h-[100px]">
-            {node.children.length === 0 && (
-              <div className="flex items-center justify-center h-full min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm">
-                Drop components here
-              </div>
-            )}
+            {node.children.length === 0 && <DropZone parentId={node.id} />}
             {node.children.map((child) => (
               <ComponentRenderer key={child.id} node={child} />
             ))}
@@ -53,11 +95,7 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
       case 'container':
         return (
           <div style={baseStyles}>
-            {node.children.length === 0 && (
-              <div className="flex items-center justify-center h-20 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm">
-                Drop components here
-              </div>
-            )}
+            {node.children.length === 0 && <DropZone parentId={node.id} />}
             {node.children.map((child) => (
               <ComponentRenderer key={child.id} node={child} />
             ))}
@@ -67,11 +105,7 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
       case 'row':
         return (
           <div style={baseStyles}>
-            {node.children.length === 0 && (
-              <div className="flex items-center justify-center h-16 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm">
-                Drop components here
-              </div>
-            )}
+            {node.children.length === 0 && <DropZone parentId={node.id} />}
             {node.children.map((child) => (
               <ComponentRenderer key={child.id} node={child} />
             ))}
@@ -81,11 +115,7 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
       case 'columns':
         return (
           <div style={baseStyles}>
-            {node.children.length === 0 && (
-              <div className="flex items-center justify-center h-16 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-sm">
-                Drop components here
-              </div>
-            )}
+            {node.children.length === 0 && <DropZone parentId={node.id} />}
             {node.children.map((child) => (
               <ComponentRenderer key={child.id} node={child} />
             ))}
@@ -341,13 +371,39 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
 // Canvas
 // ============================================================
 export function Canvas() {
-  const { viewportMode, selectNode, project, currentPageId } = useEditorStore();
+  const { viewportMode, selectNode, project, currentPageId, addNode, setDragging } = useEditorStore();
   const page = project.pages.find((p) => p.id === currentPageId);
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget || (e.target as HTMLElement).dataset.canvas) {
       selectNode(null);
     }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const componentType = e.dataTransfer.getData('componentType') as ComponentType;
+    if (!componentType) return;
+
+    const def = componentRegistry[componentType];
+    if (!def) return;
+
+    const newNode: BuilderNode = {
+      id: uuidv4(),
+      type: componentType,
+      name: def.label,
+      props: { ...def.defaultProps },
+      styles: { ...def.defaultStyles },
+      children: [],
+    };
+
+    addNode(newNode);
+    setDragging(false);
   };
 
   // Viewport widths
@@ -361,6 +417,8 @@ export function Canvas() {
     <div
       className="flex-1 overflow-auto bg-[#0f0f1e] flex justify-center"
       onClick={handleCanvasClick}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <div
         className="relative my-8 transition-all duration-300 ease-in-out"
