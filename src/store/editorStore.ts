@@ -182,24 +182,24 @@ function deepCloneNode(node: BuilderNode): BuilderNode {
 }
 
 // ============================================================
+// Default project instance
+// ============================================================
+const defaultProject = createDefaultProject();
+
+// ============================================================
 // Store
 // ============================================================
 export const useEditorStore = create<EditorStore>((set, get) => ({
   // Initial state
-  ...(() => {
-    const project = createDefaultProject();
-    return {
-      project,
-      currentPageId: project.pages[0].id,
-      selectedNodeId: null,
-      hoveredNodeId: null,
-      viewportMode: 'desktop' as ViewportMode,
-      leftSidebarTab: 'elements' as const,
-      isDragging: false,
-      clipboard: null,
-      saveStatus: 'saved' as const,
-    };
-  })(),
+  project: defaultProject,
+  currentPageId: defaultProject.pages[0].id,
+  selectedNodeId: null,
+  hoveredNodeId: null,
+  viewportMode: 'desktop' as ViewportMode,
+  leftSidebarTab: 'elements' as const,
+  isDragging: false,
+  clipboard: null,
+  saveStatus: 'saved' as const,
 
   // Viewport
   setViewportMode: (mode) => set({ viewportMode: mode }),
