@@ -1,0 +1,423 @@
+import type { ComponentDefinition, ComponentType } from '../types/builder';
+
+export const componentRegistry: Record<ComponentType, ComponentDefinition> = {
+  // Layout
+  section: {
+    type: 'section',
+    label: 'Section',
+    icon: 'Layout',
+    category: 'layout',
+    defaultProps: {},
+    defaultStyles: {
+      paddingTop: '80px',
+      paddingBottom: '80px',
+      paddingLeft: '20px',
+      paddingRight: '20px',
+    },
+    validChildren: ['container', 'row', 'columns', 'heading', 'paragraph', 'text', 'button', 'image', 'spacer', 'divider'],
+    validParents: '*',
+  },
+  container: {
+    type: 'container',
+    label: 'Container',
+    icon: 'Box',
+    category: 'layout',
+    defaultProps: {},
+    defaultStyles: {
+      maxWidth: '1200px',
+      marginLeft: 'auto',
+      marginRight: 'auto',
+      paddingLeft: '20px',
+      paddingRight: '20px',
+    },
+    validChildren: ['row', 'columns', 'heading', 'paragraph', 'text', 'button', 'image', 'card', 'spacer', 'divider'],
+    validParents: ['section'],
+  },
+  row: {
+    type: 'row',
+    label: 'Row',
+    icon: 'Rows',
+    category: 'layout',
+    defaultProps: {},
+    defaultStyles: {
+      display: 'flex',
+      flexDirection: 'row',
+      gap: '20px',
+    },
+    validChildren: ['heading', 'paragraph', 'text', 'button', 'image', 'card', 'columns', 'spacer', 'divider'],
+    validParents: ['section', 'container'],
+  },
+  columns: {
+    type: 'columns',
+    label: 'Columns',
+    icon: 'Columns',
+    category: 'layout',
+    defaultProps: { columns: 2 },
+    defaultStyles: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '24px',
+    },
+    validChildren: ['heading', 'paragraph', 'text', 'button', 'image', 'card', 'spacer'],
+    validParents: ['section', 'container', 'row'],
+  },
+  spacer: {
+    type: 'spacer',
+    label: 'Spacer',
+    icon: 'MoveVertical',
+    category: 'layout',
+    defaultProps: {},
+    defaultStyles: { height: '40px' },
+    validChildren: [],
+    validParents: '*',
+  },
+  divider: {
+    type: 'divider',
+    label: 'Divider',
+    icon: 'Minus',
+    category: 'layout',
+    defaultProps: {},
+    defaultStyles: {
+      borderTop: '1px solid #e5e7eb',
+      marginTop: '20px',
+      marginBottom: '20px',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+
+  // Basic
+  heading: {
+    type: 'heading',
+    label: 'Heading',
+    icon: 'Heading',
+    category: 'basic',
+    defaultProps: { text: 'Heading', tag: 'h2' },
+    defaultStyles: {
+      fontSize: '36px',
+      fontWeight: '700',
+      lineHeight: '1.2',
+      color: '#1f2937',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+  paragraph: {
+    type: 'paragraph',
+    label: 'Paragraph',
+    icon: 'AlignLeft',
+    category: 'basic',
+    defaultProps: { text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
+    defaultStyles: {
+      fontSize: '16px',
+      lineHeight: '1.6',
+      color: '#4b5563',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+  text: {
+    type: 'text',
+    label: 'Text',
+    icon: 'Type',
+    category: 'basic',
+    defaultProps: { text: 'Text content' },
+    defaultStyles: {
+      fontSize: '14px',
+      color: '#6b7280',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+  button: {
+    type: 'button',
+    label: 'Button',
+    icon: 'MousePointerClick',
+    category: 'basic',
+    defaultProps: { text: 'Click Me', link: '#' },
+    defaultStyles: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '12px 24px',
+      backgroundColor: '#3b82f6',
+      color: '#ffffff',
+      borderRadius: '8px',
+      fontSize: '16px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      border: 'none',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+  image: {
+    type: 'image',
+    label: 'Image',
+    icon: 'Image',
+    category: 'basic',
+    defaultProps: { src: '', alt: 'Image', objectFit: 'cover' },
+    defaultStyles: {
+      width: '100%',
+      height: '300px',
+      borderRadius: '8px',
+      objectFit: 'cover',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+  video: {
+    type: 'video',
+    label: 'Video',
+    icon: 'Video',
+    category: 'basic',
+    defaultProps: { src: '', autoplay: false },
+    defaultStyles: {
+      width: '100%',
+      height: '400px',
+      borderRadius: '8px',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+  icon: {
+    type: 'icon',
+    label: 'Icon',
+    icon: 'Star',
+    category: 'basic',
+    defaultProps: { name: 'star', size: 24 },
+    defaultStyles: {
+      color: '#3b82f6',
+      width: '24px',
+      height: '24px',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+
+  // Content
+  card: {
+    type: 'card',
+    label: 'Card',
+    icon: 'CreditCard',
+    category: 'content',
+    defaultProps: { title: 'Card Title', description: 'Card description goes here.' },
+    defaultStyles: {
+      padding: '24px',
+      borderRadius: '12px',
+      backgroundColor: '#ffffff',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      border: '1px solid #e5e7eb',
+    },
+    validChildren: ['heading', 'paragraph', 'text', 'button', 'image', 'spacer'],
+    validParents: '*',
+  },
+  feature: {
+    type: 'feature',
+    label: 'Feature',
+    icon: 'Zap',
+    category: 'content',
+    defaultProps: { title: 'Feature', description: 'Feature description' },
+    defaultStyles: { padding: '24px', textAlign: 'center' },
+    validChildren: ['heading', 'paragraph', 'icon', 'image'],
+    validParents: ['section', 'container', 'columns'],
+  },
+  testimonial: {
+    type: 'testimonial',
+    label: 'Testimonial',
+    icon: 'MessageSquare',
+    category: 'content',
+    defaultProps: { quote: 'Amazing product!', author: 'John Doe', role: 'CEO' },
+    defaultStyles: { padding: '32px', textAlign: 'center' },
+    validChildren: ['text', 'image'],
+    validParents: ['section', 'container', 'columns'],
+  },
+  pricing: {
+    type: 'pricing',
+    label: 'Pricing',
+    icon: 'DollarSign',
+    category: 'content',
+    defaultProps: { plan: 'Pro', price: '$29', period: '/month', features: ['Feature 1', 'Feature 2'] },
+    defaultStyles: { padding: '32px', textAlign: 'center', border: '1px solid #e5e7eb', borderRadius: '12px' },
+    validChildren: ['heading', 'text', 'button', 'spacer'],
+    validParents: ['section', 'container', 'columns'],
+  },
+  faq: {
+    type: 'faq',
+    label: 'FAQ',
+    icon: 'HelpCircle',
+    category: 'content',
+    defaultProps: { question: 'Question?', answer: 'Answer goes here.' },
+    defaultStyles: { padding: '16px', borderBottom: '1px solid #e5e7eb' },
+    validChildren: ['heading', 'paragraph', 'text'],
+    validParents: ['section', 'container'],
+  },
+  gallery: {
+    type: 'gallery',
+    label: 'Gallery',
+    icon: 'GalleryHorizontal',
+    category: 'content',
+    defaultProps: { images: [] },
+    defaultStyles: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' },
+    validChildren: ['image'],
+    validParents: ['section', 'container'],
+  },
+  team: {
+    type: 'team',
+    label: 'Team',
+    icon: 'Users',
+    category: 'content',
+    defaultProps: { name: 'Team Member', role: 'Role' },
+    defaultStyles: { padding: '24px', textAlign: 'center' },
+    validChildren: ['image', 'heading', 'text'],
+    validParents: ['section', 'container', 'columns'],
+  },
+  'logo-grid': {
+    type: 'logo-grid',
+    label: 'Logo Grid',
+    icon: 'Grid3x3',
+    category: 'content',
+    defaultProps: { logos: [] },
+    defaultStyles: { display: 'flex', justifyContent: 'center', gap: '40px', alignItems: 'center', flexWrap: 'wrap' },
+    validChildren: ['image'],
+    validParents: ['section', 'container'],
+  },
+
+  // Navigation
+  navbar: {
+    type: 'navbar',
+    label: 'Navbar',
+    icon: 'Menu',
+    category: 'navigation',
+    defaultProps: { brand: 'Brand', links: ['Home', 'About', 'Contact'] },
+    defaultStyles: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '16px 24px',
+      backgroundColor: '#ffffff',
+      borderBottom: '1px solid #e5e7eb',
+    },
+    validChildren: ['button', 'text'],
+    validParents: '*',
+  },
+  breadcrumb: {
+    type: 'breadcrumb',
+    label: 'Breadcrumb',
+    icon: 'ChevronRight',
+    category: 'navigation',
+    defaultProps: { items: ['Home', 'Page'] },
+    defaultStyles: { display: 'flex', gap: '8px', fontSize: '14px', color: '#6b7280', padding: '12px 0' },
+    validChildren: [],
+    validParents: ['section', 'container'],
+  },
+  footer: {
+    type: 'footer',
+    label: 'Footer',
+    icon: 'PanelBottom',
+    category: 'navigation',
+    defaultProps: { copyright: '© 2026 Company. All rights reserved.' },
+    defaultStyles: {
+      padding: '40px 24px',
+      backgroundColor: '#1f2937',
+      color: '#ffffff',
+      textAlign: 'center',
+    },
+    validChildren: ['heading', 'text', 'button', 'row', 'columns', 'spacer'],
+    validParents: '*',
+  },
+
+  // Forms
+  input: {
+    type: 'input',
+    label: 'Input',
+    icon: 'TextCursorInput',
+    category: 'forms',
+    defaultProps: { placeholder: 'Enter text...', label: 'Label', type: 'text' },
+    defaultStyles: {
+      width: '100%',
+      padding: '12px 16px',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      fontSize: '14px',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+  textarea: {
+    type: 'textarea',
+    label: 'Textarea',
+    icon: 'FileText',
+    category: 'forms',
+    defaultProps: { placeholder: 'Enter message...', label: 'Message', rows: 4 },
+    defaultStyles: {
+      width: '100%',
+      padding: '12px 16px',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      fontSize: '14px',
+      resize: 'vertical',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+  select: {
+    type: 'select',
+    label: 'Select',
+    icon: 'ChevronDown',
+    category: 'forms',
+    defaultProps: { options: ['Option 1', 'Option 2', 'Option 3'], label: 'Select' },
+    defaultStyles: {
+      width: '100%',
+      padding: '12px 16px',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      fontSize: '14px',
+    },
+    validChildren: [],
+    validParents: '*',
+  },
+  checkbox: {
+    type: 'checkbox',
+    label: 'Checkbox',
+    icon: 'CheckSquare',
+    category: 'forms',
+    defaultProps: { label: 'Checkbox label', checked: false },
+    defaultStyles: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' },
+    validChildren: [],
+    validParents: '*',
+  },
+  'contact-form': {
+    type: 'contact-form',
+    label: 'Contact Form',
+    icon: 'Mail',
+    category: 'forms',
+    defaultProps: { submitText: 'Send Message' },
+    defaultStyles: { padding: '32px', borderRadius: '12px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' },
+    validChildren: ['input', 'textarea', 'select', 'checkbox', 'button', 'spacer'],
+    validParents: ['section', 'container'],
+  },
+};
+
+export function getComponentDefinition(type: ComponentType): ComponentDefinition {
+  return componentRegistry[type];
+}
+
+export function getComponentsByCategory(category: ComponentDefinition['category']): ComponentDefinition[] {
+  return Object.values(componentRegistry).filter((c) => c.category === category);
+}
+
+export function canDropChild(parentType: ComponentType, childType: ComponentType): boolean {
+  const parent = componentRegistry[parentType];
+  if (!parent) return false;
+  if (parent.validChildren === '*') return true;
+  return parent.validChildren.includes(childType);
+}
+
+export function canDropParent(childType: ComponentType, parentType: ComponentType | null): boolean {
+  const child = componentRegistry[childType];
+  if (!child) return false;
+  if (child.validParents === '*') return true;
+  if (parentType === null) return child.validParents.includes(childType as never);
+  return child.validParents.includes(parentType);
+}
