@@ -71,20 +71,35 @@ function DraggableComponent({ type, label, icon }: { type: ComponentType; label:
     id: `sidebar-${type}`,
     data: { type, from: 'sidebar' },
   });
+  const { addNode } = useEditorStore();
 
   const Icon = getIcon(icon);
+
+  const handleClick = () => {
+    const def = componentRegistry[type];
+    const newNode: BuilderNode = {
+      id: uuidv4(),
+      type,
+      name: def.label,
+      props: { ...def.defaultProps },
+      styles: { ...def.defaultStyles },
+      children: [],
+    };
+    addNode(newNode);
+  };
 
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      onClick={handleClick}
       className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all cursor-grab active:cursor-grabbing group select-none ${
         isDragging
           ? 'bg-blue-500/20 border-blue-500 opacity-50'
           : 'bg-[#1e1e36] border-[#2a2a4a] hover:border-blue-500/50 hover:bg-[#252545]'
       }`}
-      title={`Drag to add ${label}`}
+      title={`Click to add or drag ${label}`}
     >
       <Icon size={18} className="text-gray-400 group-hover:text-blue-400 transition-colors" />
       <span className="text-[10px] text-gray-500 group-hover:text-gray-300 transition-colors">

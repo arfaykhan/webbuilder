@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
+import { v4 as uuidv4 } from 'uuid';
 import { useEditorStore } from '../../../store/editorStore';
 import { componentRegistry } from '../../../lib/component-registry';
 import type { BuilderNode } from '../../../types/builder';
@@ -371,13 +372,129 @@ function ComponentRenderer({ node }: { node: BuilderNode }) {
 // Canvas
 // ============================================================
 export function Canvas() {
-  const { viewportMode, selectNode, project, currentPageId } = useEditorStore();
+  const { viewportMode, selectNode, project, currentPageId, addNode } = useEditorStore();
   const page = project.pages.find((p) => p.id === currentPageId);
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget || (e.target as HTMLElement).dataset.canvas) {
       selectNode(null);
     }
+  };
+
+  // Quick start - add a basic page structure
+  const handleQuickStart = () => {
+    // Add a section with navbar
+    const navbar: BuilderNode = {
+      id: uuidv4(),
+      type: 'navbar',
+      name: 'Navbar',
+      props: { brand: 'My Website', links: ['Home', 'About', 'Contact'] },
+      styles: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '16px 24px',
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid #e5e7eb',
+      },
+      children: [],
+    };
+    addNode(navbar);
+
+    // Add a hero section
+    const heroSection: BuilderNode = {
+      id: uuidv4(),
+      type: 'section',
+      name: 'Hero Section',
+      props: {},
+      styles: {
+        paddingTop: '80px',
+        paddingBottom: '80px',
+        paddingLeft: '20px',
+        paddingRight: '20px',
+        backgroundColor: '#f9fafb',
+        textAlign: 'center',
+      },
+      children: [
+        {
+          id: uuidv4(),
+          type: 'container',
+          name: 'Container',
+          props: {},
+          styles: {
+            maxWidth: '800px',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          },
+          children: [
+            {
+              id: uuidv4(),
+              type: 'heading',
+              name: 'Hero Heading',
+              props: { text: 'Welcome to My Website', tag: 'h1' },
+              styles: {
+                fontSize: '48px',
+                fontWeight: '700',
+                lineHeight: '1.2',
+                color: '#1f2937',
+                marginBottom: '24px',
+              },
+              children: [],
+            },
+            {
+              id: uuidv4(),
+              type: 'paragraph',
+              name: 'Hero Text',
+              props: { text: 'Build amazing websites with our visual builder. No coding required.' },
+              styles: {
+                fontSize: '20px',
+                lineHeight: '1.6',
+                color: '#6b7280',
+                marginBottom: '32px',
+              },
+              children: [],
+            },
+            {
+              id: uuidv4(),
+              type: 'button',
+              name: 'CTA Button',
+              props: { text: 'Get Started', link: '#' },
+              styles: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '14px 32px',
+                backgroundColor: '#3b82f6',
+                color: '#ffffff',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                border: 'none',
+              },
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
+    addNode(heroSection);
+
+    // Add a footer
+    const footer: BuilderNode = {
+      id: uuidv4(),
+      type: 'footer',
+      name: 'Footer',
+      props: { copyright: '© 2026 My Website. All rights reserved.' },
+      styles: {
+        padding: '40px 24px',
+        backgroundColor: '#1f2937',
+        color: '#ffffff',
+        textAlign: 'center',
+      },
+      children: [],
+    };
+    addNode(footer);
   };
 
   // Viewport widths
@@ -406,19 +523,56 @@ export function Canvas() {
           {(!page || page.nodes.length === 0) && (
             <div
               data-canvas="true"
-              className="flex flex-col items-center justify-center min-h-[400px] text-center p-8"
+              className="flex flex-col items-center justify-center min-h-[500px] text-center p-8"
             >
-              <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-400">
+              <div className="w-20 h-20 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-6">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-400">
                   <rect x="3" y="3" width="18" height="18" rx="2" />
                   <path d="M3 9h18" />
                   <path d="M9 21V9" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">Start Building</h3>
-              <p className="text-sm text-gray-500 max-w-sm">
-                Drag components from the left sidebar or click to add them to your page.
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Start Building Your Website</h3>
+              <p className="text-sm text-gray-500 max-w-md mb-8">
+                Drag components from the left sidebar, click to add them, or start with a template.
               </p>
+
+              {/* Quick Start Button */}
+              <button
+                onClick={handleQuickStart}
+                className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/20 mb-6"
+              >
+                Start with Basic Template
+              </button>
+
+              {/* Instructions */}
+              <div className="flex gap-8 text-xs text-gray-500">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </div>
+                  <span>Click components to add</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
+                      <path d="M5 9l4-4 4 4M9 5v14" />
+                    </svg>
+                  </div>
+                  <span>Drag to reposition</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1" />
+                    </svg>
+                  </div>
+                  <span>Edit in properties panel</span>
+                </div>
+              </div>
             </div>
           )}
 
